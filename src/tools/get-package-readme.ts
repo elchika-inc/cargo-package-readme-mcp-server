@@ -4,6 +4,7 @@ import { cache, createCacheKey } from '../services/cache.js';
 import { cratesIoApi } from '../services/crates-io-api.js';
 import { githubApi } from '../services/github-api.js';
 import { readmeParser } from '../services/readme-parser.js';
+import { searchPackages } from './search-packages.js';
 import type {
   GetPackageReadmeParams,
   PackageReadmeResponse,
@@ -32,6 +33,34 @@ export async function getPackageReadme(params: GetPackageReadmeParams): Promise<
   }
 
   try {
+    // First, check if crate exists using direct API call
+    logger.debug(`Checking crate existence: ${package_name}`);
+    const crateExists = await cratesIoApi.crateExists(package_name);
+    
+    if (!crateExists) {
+      logger.warn(`Crate not found: ${package_name}`);
+      return {
+        package_name,
+        version: version,
+        description: 'Package not found',
+        readme_content: '',
+        usage_examples: [],
+        installation: { cargo: `install ${package_name}` },
+        basic_info: {
+          name: package_name,
+          version: version,
+          description: 'Package not found',
+          license: 'Unknown',
+          authors: [],
+          keywords: [],
+          categories: [],
+        },
+        exists: false,
+      };
+    }
+    
+    logger.debug(`Crate exists: ${package_name}`);
+
     // Get crate info from crates.io
     const crateInfo = await cratesIoApi.getCrateInfo(package_name);
     const versionInfo = await cratesIoApi.getVersionInfo(package_name, version);
@@ -68,7 +97,7 @@ export async function getPackageReadme(params: GetPackageReadmeParams): Promise<
 
     // Create installation info
     const installation: InstallationInfo = {
-      cargo: `cargo add ${package_name}`,
+      cargo: `install ${package_name}`,
       toml: `[dependencies]\n${package_name} = "${actualVersion}"`,
     };
 
@@ -106,6 +135,7 @@ export async function getPackageReadme(params: GetPackageReadmeParams): Promise<
       installation,
       basic_info: basicInfo,
       repository: repository || undefined,
+      exists: true,
     };
 
     // Cache the response

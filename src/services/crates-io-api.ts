@@ -19,6 +19,44 @@ export class CratesIoApiClient {
     this.timeout = timeout || 30000;
   }
 
+  async crateExists(crateName: string): Promise<boolean> {
+    const url = `${this.baseUrl}/crates/${encodeURIComponent(crateName)}`;
+    
+    try {
+      logger.debug(`Checking crate existence: ${crateName}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'HEAD',
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'cargo-package-readme-mcp/1.0.0',
+          },
+        });
+
+        const exists = response.ok;
+        logger.debug(`Crate existence check for ${crateName}: ${exists}`);
+        return exists;
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          logger.warn(`Timeout checking crate existence: ${crateName}`);
+          return false;
+        }
+        logger.warn(`Error checking crate existence: ${crateName}`, { error });
+        return false;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch (error) {
+      logger.warn(`Failed to check crate existence: ${crateName}`, { error });
+      return false;
+    }
+  }
+
   async getCrateInfo(crateName: string): Promise<CratesIoCrateResponse> {
     const url = `${this.baseUrl}/crates/${encodeURIComponent(crateName)}`;
     

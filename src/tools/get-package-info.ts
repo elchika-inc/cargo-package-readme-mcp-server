@@ -29,6 +29,26 @@ export async function getPackageInfo(params: GetPackageInfoParams): Promise<Pack
   }
 
   try {
+    // First, check if crate exists using direct API call
+    logger.debug(`Checking crate existence: ${package_name}`);
+    const crateExists = await cratesIoApi.crateExists(package_name);
+    
+    if (!crateExists) {
+      logger.warn(`Crate not found: ${package_name}`);
+      return {
+        package_name,
+        latest_version: 'unknown',
+        description: 'Package not found',
+        author: 'Unknown',
+        license: 'Unknown',
+        keywords: [],
+        download_stats: { last_day: 0, last_week: 0, last_month: 0 },
+        exists: false,
+      };
+    }
+    
+    logger.debug(`Crate exists: ${package_name}`);
+    
     // Get crate info from crates.io
     const crateInfo = await cratesIoApi.getCrateInfo(package_name);
     
@@ -81,14 +101,14 @@ export async function getPackageInfo(params: GetPackageInfoParams): Promise<Pack
       package_name,
       latest_version: latestVersion,
       description: crateInfo.crate.description || 'No description available',
-      authors: versionInfo.authors?.map(author => author.name) || [],
+      author: versionInfo.authors?.[0]?.name || 'Unknown',
       license: versionInfo.license || 'Unknown',
       keywords: crateInfo.keywords.map(kw => kw.keyword),
-      categories: crateInfo.categories.map(cat => cat.category),
       dependencies,
       dev_dependencies: devDependencies,
       download_stats: downloadStats,
       repository,
+      exists: true,
     };
 
     // Cache the response

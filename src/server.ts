@@ -3,6 +3,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ErrorCode,
+  ListPromptsRequestSchema,
+  ListResourcesRequestSchema,
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
@@ -86,20 +88,22 @@ const TOOL_DEFINITIONS = {
           minimum: 1,
           maximum: 100,
         },
-        category: {
-          type: 'string',
-          description: 'Filter by category (e.g., "web-programming", "game-development")',
+        quality: {
+          type: 'number',
+          description: 'Minimum quality score (0-1)',
+          minimum: 0,
+          maximum: 1,
         },
-        sort: {
-          type: 'string',
-          description: 'Sort order (default: "relevance")',
-          enum: ['relevance', 'downloads', 'recent-downloads', 'recent-updates'],
-          default: 'relevance',
+        popularity: {
+          type: 'number',
+          description: 'Minimum popularity score (0-1)',
+          minimum: 0,
+          maximum: 1,
         },
       },
       required: ['query'],
     },
-  },
+  }
 } as const;
 
 export class CargoPackageReadmeMcpServer {
@@ -114,7 +118,9 @@ export class CargoPackageReadmeMcpServer {
       {
         capabilities: {
           tools: {},
-        },
+          prompts: {},
+          resources: {}
+        }
       }
     );
 
@@ -123,14 +129,24 @@ export class CargoPackageReadmeMcpServer {
 
   private setupHandlers(): void {
     // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+    (this.server as any).setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: Object.values(TOOL_DEFINITIONS),
-      };
+      }
+    });
+
+    // Handle prompts list
+    (this.server as any).setRequestHandler(ListPromptsRequestSchema, async () => {
+      return { prompts: [] };
+    });
+
+    // Handle resources list
+    (this.server as any).setRequestHandler(ListResourcesRequestSchema, async () => {
+      return { resources: [] };
     });
 
     // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    (this.server as any).setRequestHandler(CallToolRequestSchema, async (request: any, _extra: any) => {
       const { name, arguments: args } = request.params;
       
 
@@ -236,9 +252,9 @@ export class CargoPackageReadmeMcpServer {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
     };
   }
 
@@ -296,9 +312,9 @@ export class CargoPackageReadmeMcpServer {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
     };
   }
 
@@ -330,21 +346,18 @@ export class CargoPackageReadmeMcpServer {
       }
     }
 
-    if (params.category !== undefined && typeof params.category !== 'string') {
+    if (params.quality !== undefined && (typeof params.quality !== 'number' || params.quality < 0 || params.quality > 1)) {
       throw new McpError(
         ErrorCode.InvalidParams,
-        'category must be a string'
+        'quality must be a number between 0 and 1'
       );
     }
 
-    if (params.sort !== undefined) {
-      const validSorts = ['relevance', 'downloads', 'recent-downloads', 'recent-updates'];
-      if (typeof params.sort !== 'string' || !validSorts.includes(params.sort)) {
-        throw new McpError(
-          ErrorCode.InvalidParams,
-          `sort must be one of: ${validSorts.join(', ')}`
-        );
-      }
+    if (params.popularity !== undefined && (typeof params.popularity !== 'number' || params.popularity < 0 || params.popularity > 1)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'popularity must be a number between 0 and 1'
+      );
     }
 
     const result: SearchPackagesParams = {
@@ -355,12 +368,12 @@ export class CargoPackageReadmeMcpServer {
       result.limit = params.limit as number;
     }
     
-    if (params.category !== undefined) {
-      result.category = params.category as string;
+    if (params.quality !== undefined) {
+      result.quality = params.quality as number;
     }
     
-    if (params.sort !== undefined) {
-      result.sort = params.sort as 'relevance' | 'downloads' | 'recent-downloads' | 'recent-updates';
+    if (params.popularity !== undefined) {
+      result.popularity = params.popularity as number;
     }
     
     return result;
@@ -372,9 +385,9 @@ export class CargoPackageReadmeMcpServer {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
     };
   }
 
@@ -402,7 +415,7 @@ export class CargoPackageReadmeMcpServer {
   async run(): Promise<void> {
     try {
       const transport = new StdioServerTransport();
-      await this.server.connect(transport);
+      await (this.server as any).connect(transport);
     } catch (error) {
       logger.error('Failed to start server transport', { error });
       throw error;
@@ -410,7 +423,7 @@ export class CargoPackageReadmeMcpServer {
   }
 
   async stop(): Promise<void> {
-    await this.server.close();
+    await (this.server as any).close();
   }
 }
 

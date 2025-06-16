@@ -46,11 +46,18 @@ export interface PackageSearchResult {
   version: string;
   description: string;
   keywords: string[];
-  categories: string[];
-  authors: string[];
-  downloads: number;
-  recent_downloads: number;
-  exact_match: boolean;
+  author: string;
+  publisher: string;
+  maintainers: string[];
+  score: {
+    final: number;
+    detail: {
+      quality: number;
+      popularity: number;
+      maintenance: number;
+    };
+  };
+  searchScore: number;
 }
 
 // Tool Parameters
@@ -69,8 +76,8 @@ export interface GetPackageInfoParams {
 export interface SearchPackagesParams {
   query: string;          // Search query
   limit?: number;         // Max results limit (default: 20)
-  category?: string;      // Category filter
-  sort?: 'relevance' | 'downloads' | 'recent-downloads' | 'recent-updates'; // Sort order
+  quality?: number;       // Quality score minimum value (0-1)
+  popularity?: number;    // Popularity score minimum value (0-1)
 }
 
 // Tool Responses
@@ -83,20 +90,21 @@ export interface PackageReadmeResponse {
   installation: InstallationInfo;
   basic_info: PackageBasicInfo;
   repository?: RepositoryInfo | undefined;
+  exists: boolean;
 }
 
 export interface PackageInfoResponse {
   package_name: string;
   latest_version: string;
   description: string;
-  authors: string[];
+  author: string;
   license: string;
   keywords: string[];
-  categories: string[];
   dependencies?: Record<string, string> | undefined;
   dev_dependencies?: Record<string, string> | undefined;
   download_stats: DownloadStats;
   repository?: RepositoryInfo | undefined;
+  exists: boolean;
 }
 
 export interface SearchPackagesResponse {
