@@ -23,8 +23,8 @@ import {
 } from './types/index.js';
 
 const TOOL_DEFINITIONS = {
-  get_package_readme: {
-    name: 'get_package_readme',
+  get_readme_from_cargo: {
+    name: 'get_readme_from_cargo',
     description: 'Get Rust crate README and usage examples from crates.io',
     inputSchema: {
       type: 'object',
@@ -47,8 +47,8 @@ const TOOL_DEFINITIONS = {
       required: ['package_name'],
     },
   },
-  get_package_info: {
-    name: 'get_package_info',
+  get_package_info_from_cargo: {
+    name: 'get_package_info_from_cargo',
     description: 'Get Rust crate basic information and dependencies from crates.io',
     inputSchema: {
       type: 'object',
@@ -71,8 +71,8 @@ const TOOL_DEFINITIONS = {
       required: ['package_name'],
     },
   },
-  search_packages: {
-    name: 'search_packages',
+  search_packages_from_cargo: {
+    name: 'search_packages_from_cargo',
     description: 'Search for Rust crates in crates.io registry',
     inputSchema: {
       type: 'object',
@@ -160,13 +160,13 @@ export class CargoPackageReadmeMcpServer {
         }
 
         switch (name) {
-          case 'get_package_readme':
+          case 'get_readme_from_cargo':
             return await this.handleGetPackageReadme(this.validateGetPackageReadmeParams(args));
           
-          case 'get_package_info':
+          case 'get_package_info_from_cargo':
             return await this.handleGetPackageInfo(this.validateGetPackageInfoParams(args));
           
-          case 'search_packages':
+          case 'search_packages_from_cargo':
             return await this.handleSearchPackages(this.validateSearchPackagesParams(args));
           
           default:

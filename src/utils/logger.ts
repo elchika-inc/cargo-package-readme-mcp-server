@@ -11,49 +11,43 @@ export class Logger {
   constructor() {
     const envLevel = process.env.LOG_LEVEL?.toUpperCase() || 'INFO';
     this.level = LogLevel[envLevel as keyof typeof LogLevel] ?? LogLevel.INFO;
+    // Suppress unused variable warning
+    void this.level;
   }
 
-  private formatMessage(level: string, message: string, meta?: unknown): string {
-    const timestamp = new Date().toISOString();
-    const baseMessage = `[${timestamp}] [${level}] ${message}`;
-    
-    if (meta !== undefined) {
-      return `${baseMessage} ${JSON.stringify(meta, null, 2)}`;
-    }
-    
-    return baseMessage;
+  private formatMessage(_level: string, _message: string, _meta?: unknown): string {
+    // Disabled for MCP servers
+    return '';
   }
 
-  private shouldLog(level: LogLevel): boolean {
-    return level >= this.level;
+  private shouldLog(_level: LogLevel): boolean {
+    // Disabled for MCP servers
+    return false;
   }
 
-  debug(message: string, meta?: unknown): void {
-    if (this.shouldLog(LogLevel.DEBUG)) {
-      console.debug(this.formatMessage('DEBUG', message, meta));
-    }
+  debug(_message: string, _meta?: unknown): void {
+    // Disable all console output for MCP servers to prevent JSON-RPC corruption
+    return;
   }
 
-  info(message: string, meta?: unknown): void {
-    if (this.shouldLog(LogLevel.INFO)) {
-      console.info(this.formatMessage('INFO', message, meta));
-    }
+  info(_message: string, _meta?: unknown): void {
+    // Disable all console output for MCP servers to prevent JSON-RPC corruption
+    return;
   }
 
-  warn(message: string, meta?: unknown): void {
-    if (this.shouldLog(LogLevel.WARN)) {
-      console.warn(this.formatMessage('WARN', message, meta));
-    }
+  warn(_message: string, _meta?: unknown): void {
+    // Disable all console output for MCP servers to prevent JSON-RPC corruption
+    return;
   }
 
-  error(message: string, meta?: unknown): void {
-    if (this.shouldLog(LogLevel.ERROR)) {
-      console.error(this.formatMessage('ERROR', message, meta));
-    }
+  error(_message: string, _meta?: unknown): void {
+    // Disable all console output for MCP servers to prevent JSON-RPC corruption
+    return;
   }
 
-  setLevel(level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'): void {
-    this.level = LogLevel[level];
+  setLevel(_level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'): void {
+    // Disabled for MCP servers
+    return;
   }
 }
 
