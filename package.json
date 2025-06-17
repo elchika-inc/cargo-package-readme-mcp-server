@@ -1,6 +1,6 @@
 {
   "name": "cargo-package-readme-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for fetching Rust crate README and usage information from crates.io",
   "type": "module",
   "main": "dist/index.js",

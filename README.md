@@ -1,28 +1,46 @@
 # Cargo Package README MCP Server
 
-An MCP (Model Context Protocol) server for fetching Rust crate README files and usage information from crates.io. This server provides comprehensive information about Rust packages including documentation, usage examples, dependencies, and metadata.
+[![npm version](https://img.shields.io/npm/v/cargo-package-readme-mcp-server)](https://www.npmjs.com/package/cargo-package-readme-mcp-server)
+[![npm downloads](https://img.shields.io/npm/dm/cargo-package-readme-mcp-server)](https://www.npmjs.com/package/cargo-package-readme-mcp-server)
+[![GitHub stars](https://img.shields.io/github/stars/naoto24kawa/cargo-package-readme-mcp-server)](https://github.com/naoto24kawa/cargo-package-readme-mcp-server)
+[![GitHub issues](https://img.shields.io/github/issues/naoto24kawa/cargo-package-readme-mcp-server)](https://github.com/naoto24kawa/cargo-package-readme-mcp-server/issues)
+[![license](https://img.shields.io/npm/l/cargo-package-readme-mcp-server)](https://github.com/naoto24kawa/cargo-package-readme-mcp-server/blob/main/LICENSE)
 
-## Features
+An MCP (Model Context Protocol) server for fetching Rust crate README files and usage information from crates.io. This server provides AI assistants with comprehensive access to Rust package documentation, usage examples, dependencies, and metadata through a clean API interface.
 
-- **Package README Retrieval**: Fetch complete README content with usage examples
-- **Package Information**: Get detailed metadata, dependencies, and statistics
-- **Package Search**: Search for crates with filtering and sorting options
-- **Smart Caching**: Efficient caching system with TTL and LRU eviction
-- **GitHub Fallback**: Automatically fetch README from GitHub if not available on crates.io
-- **Error Handling**: Robust error handling with retry mechanisms
-- **Type Safety**: Full TypeScript implementation with comprehensive type definitions
+## ✨ Key Features
 
-## Installation
+- 📖 **Comprehensive README Retrieval**: Fetch complete README content with formatted usage examples and documentation
+- 📊 **Detailed Package Information**: Access metadata, dependencies, download statistics, and version history
+- 🔍 **Advanced Package Search**: Search crates with filtering by category, sorting options, and relevance ranking
+- ⚡ **Intelligent Caching**: Multi-tier caching system with TTL management and LRU eviction for optimal performance
+- 🔄 **GitHub Integration**: Automatic fallback to GitHub repositories when README is not available on crates.io
+- 🛡️ **Robust Error Handling**: Comprehensive error handling with retry mechanisms and circuit breaker patterns
+- 🔧 **Type-Safe Implementation**: Full TypeScript implementation with comprehensive type definitions and validation
+- 🚀 **High Performance**: Optimized for speed with concurrent request handling and smart batching
+
+## 📦 Installation
+
+### Via npm (Recommended)
 
 ```bash
-npm install cargo-package-readme-mcp-server
+npm install -g cargo-package-readme-mcp-server
 ```
 
-## Usage
+### Via npx (No installation required)
 
-### As an MCP Server
+```bash
+npx cargo-package-readme-mcp-server
+```
 
-Add to your MCP client configuration:
+## 🚀 Quick Start
+
+### Claude Desktop Integration
+
+Add to your Claude Desktop configuration file:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -37,19 +55,27 @@ Add to your MCP client configuration:
 }
 ```
 
+### Other MCP Clients
+
+For other MCP-compatible clients, use the standard MCP server configuration with the command `cargo-package-readme-mcp-server`.
+
+## ⚙️ Configuration
+
 ### Environment Variables
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `GITHUB_TOKEN` | GitHub API token for README fallback | - | No |
+| `GITHUB_TOKEN` | GitHub API token for README fallback and rate limiting | - | Recommended |
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARN, ERROR) | INFO | No |
-| `CACHE_TTL` | Cache time-to-live in milliseconds | 3600000 | No |
-| `CACHE_MAX_SIZE` | Maximum cache size in bytes | 104857600 | No |
-| `REQUEST_TIMEOUT` | Request timeout in milliseconds | 30000 | No |
+| `CACHE_TTL` | Cache time-to-live in milliseconds | 3600000 (1 hour) | No |
+| `CACHE_MAX_SIZE` | Maximum cache size in bytes | 104857600 (100MB) | No |
+| `REQUEST_TIMEOUT` | Request timeout in milliseconds | 30000 (30s) | No |
 
-## Available Tools
+> **💡 Pro Tip**: Setting a `GITHUB_TOKEN` significantly improves API rate limits and enables README fallback functionality.
 
-### 1. get_package_readme
+## 🛠️ Available Tools
+
+### 1. 📖 get_package_readme
 
 Retrieves comprehensive README and usage information for a Rust crate.
 
@@ -67,7 +93,7 @@ Retrieves comprehensive README and usage information for a Rust crate.
 }
 ```
 
-### 2. get_package_info
+### 2. 📊 get_package_info
 
 Gets basic package information, metadata, and dependencies.
 
@@ -85,7 +111,7 @@ Gets basic package information, metadata, and dependencies.
 }
 ```
 
-### 3. search_packages
+### 3. 🔍 search_packages
 
 Search for Rust crates with filtering and sorting options.
 
@@ -105,7 +131,13 @@ Search for Rust crates with filtering and sorting options.
 }
 ```
 
-## Development
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- TypeScript 5+
 
 ### Setup
 
@@ -120,18 +152,21 @@ npm install
 # Build the project
 npm run build
 
-# Run in development mode
+# Run in development mode with hot reload
 npm run dev
 ```
 
-### Scripts
+### Available Scripts
 
-- `npm run build` - Build the TypeScript project
-- `npm run dev` - Run in development mode with auto-reload
-- `npm start` - Start the production server
-- `npm test` - Run tests
-- `npm run lint` - Run ESLint
-- `npm run typecheck` - Run TypeScript type checking
+| Command | Description |
+|---------|-------------|
+| `npm run build` | Build TypeScript to JavaScript |
+| `npm run dev` | Development mode with auto-reload |
+| `npm start` | Start production server |
+| `npm test` | Run test suite |
+| `npm run lint` | Run ESLint code analysis |
+| `npm run typecheck` | TypeScript type checking |
+| `npm run clean` | Clean build artifacts |
 
 ### Project Structure
 
@@ -156,46 +191,90 @@ src/
     └── index.ts
 ```
 
-## API Integration
+## 🔌 API Integration
 
-### Crates.io API
+### Crates.io API Endpoints
 
-- **Package Info**: `https://crates.io/api/v1/crates/{crate}`
-- **Version Info**: `https://crates.io/api/v1/crates/{crate}/{version}`
-- **Search**: `https://crates.io/api/v1/crates?q={query}`
-- **Downloads**: `https://crates.io/api/v1/crates/{crate}/downloads`
+| Endpoint | Purpose | Rate Limit |
+|----------|---------|------------|
+| `GET /api/v1/crates/{crate}` | Package information | 1000/hour |
+| `GET /api/v1/crates/{crate}/{version}` | Version-specific data | 1000/hour |
+| `GET /api/v1/crates?q={query}` | Package search | 1000/hour |
+| `GET /api/v1/crates/{crate}/downloads` | Download statistics | 1000/hour |
 
 ### GitHub API (Fallback)
 
-- **README**: `https://api.github.com/repos/{owner}/{repo}/readme`
+| Endpoint | Purpose | Rate Limit |
+|----------|---------|------------|
+| `GET /repos/{owner}/{repo}/readme` | Repository README | 5000/hour (authenticated) |
+| `GET /repos/{owner}/{repo}` | Repository metadata | 5000/hour (authenticated) |
 
-## Caching Strategy
+## 💾 Caching Strategy
 
-- **Memory Cache**: LRU cache with configurable TTL and size limits
-- **Package Info**: 1 hour TTL
-- **README Content**: 1 hour TTL  
-- **Search Results**: 10 minutes TTL
-- **Download Stats**: Daily invalidation
+Our intelligent caching system optimizes performance and reduces API calls:
 
-## Error Handling
+| Data Type | TTL | Cache Strategy |
+|-----------|-----|----------------|
+| **Package Info** | 1 hour | LRU with size-based eviction |
+| **README Content** | 1 hour | LRU with compression |
+| **Search Results** | 10 minutes | LRU with query-based keys |
+| **Download Stats** | 24 hours | Time-based invalidation |
+| **Version Lists** | 6 hours | Incremental updates |
 
-- **Package Not Found**: Returns 404 with appropriate error message
-- **Rate Limiting**: Implements exponential backoff retry strategy
-- **Network Errors**: Automatic retry with circuit breaker pattern
-- **Validation Errors**: Comprehensive input validation with detailed error messages
+## 🛡️ Error Handling & Resilience
 
-## License
+- **🔍 Package Not Found**: Graceful 404 handling with suggested alternatives
+- **⏱️ Rate Limiting**: Exponential backoff with jitter for optimal retry timing
+- **🌐 Network Errors**: Circuit breaker pattern with automatic failover
+- **✅ Input Validation**: Comprehensive validation with detailed error messages
+- **🔄 Retry Logic**: Smart retry mechanisms with configurable backoff strategies
 
-MIT
+## 📋 Example Use Cases
 
-## Contributing
+### AI Assistant Integration
+- **Documentation Research**: "Find information about the `serde` crate"
+- **Dependency Analysis**: "What are the dependencies of `tokio` version 1.0?"
+- **Package Discovery**: "Search for web frameworks in Rust"
+- **Usage Examples**: "Show me how to use the `reqwest` HTTP client"
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### Development Workflow
+- **Package Evaluation**: Compare multiple crates for similar functionality
+- **Version Planning**: Analyze changelogs and breaking changes
+- **Dependency Management**: Understand transitive dependencies
+- **Learning Resources**: Access comprehensive documentation and examples
 
-## Support
+## 🤝 Contributing
 
-For issues and questions, please use the GitHub issue tracker.
+We welcome contributions! Here's how to get started:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Guidelines
+- Follow TypeScript best practices
+- Add tests for new functionality
+- Update documentation as needed
+- Ensure all tests pass before submitting
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support & Feedback
+
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/your-repo/cargo-package-readme-mcp-server/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/your-repo/cargo-package-readme-mcp-server/discussions)
+- **📚 Documentation**: [Wiki](https://github.com/your-repo/cargo-package-readme-mcp-server/wiki)
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Rust community**
+
+[⭐ Star us on GitHub](https://github.com/your-repo/cargo-package-readme-mcp-server) | [🐦 Follow updates](https://twitter.com/your-handle)
+
+</div>
