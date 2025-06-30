@@ -1,13 +1,11 @@
 import { logger } from '../utils/logger.js';
+import { SectionExtractor } from './section-extractor.js';
+import { CodeAnalyzer } from './code-analyzer.js';
 import type { UsageExample } from '../types/index.js';
 
 export class ReadmeParser {
-  private static readonly USAGE_SECTION_PATTERNS = [
-    /^#{1,6}\s*(usage|use|using|how to use|getting started|quick start|examples?|basic usage)\s*$/gim,
-    /^usage:?\s*$/gim,
-    /^examples?:?\s*$/gim,
-  ];
-
+  private readonly sectionExtractor = new SectionExtractor();
+  private readonly codeAnalyzer = new CodeAnalyzer();
   private static readonly CODE_BLOCK_PATTERN = /```(\w+)?\n([\s\S]*?)```/g;
 
   parseUsageExamples(readmeContent: string, includeExamples: boolean = true): UsageExample[] {
@@ -17,17 +15,14 @@ export class ReadmeParser {
 
     try {
       const examples: UsageExample[] = [];
-      const sections = this.extractUsageSections(readmeContent);
+      const sections = this.sectionExtractor.extractUsageSections(readmeContent);
 
       for (const section of sections) {
         const sectionExamples = this.extractCodeBlocksFromSection(section);
         examples.push(...sectionExamples);
       }
 
-      // Deduplicate examples based on code content
       const uniqueExamples = this.deduplicateExamples(examples);
-      
-      // Limit to reasonable number
       const limitedExamples = uniqueExamples.slice(0, 10);
 
       logger.debug(`Extracted ${limitedExamples.length} usage examples from README`);
@@ -38,58 +33,6 @@ export class ReadmeParser {
     }
   }
 
-  private extractUsageSections(content: string): string[] {
-    const sections: string[] = [];
-    const lines = content.split('\n');
-    let currentSection: string[] = [];
-    let inUsageSection = false;
-    let sectionLevel = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const isHeader = line ? /^#{1,6}\s/.test(line) : false;
-      
-      if (isHeader && line) {
-        const level = (line.match(/^#+/) || [''])[0].length;
-        const isUsageHeader = this.isUsageHeader(line);
-
-        if (isUsageHeader) {
-          // Start new usage section
-          if (currentSection.length > 0) {
-            sections.push(currentSection.join('\n'));
-          }
-          currentSection = [line || ''];
-          inUsageSection = true;
-          sectionLevel = level;
-        } else if (inUsageSection && level <= sectionLevel) {
-          // End of current usage section
-          if (currentSection.length > 0) {
-            sections.push(currentSection.join('\n'));
-          }
-          currentSection = [];
-          inUsageSection = false;
-        } else if (inUsageSection) {
-          currentSection.push(line || '');
-        }
-      } else if (inUsageSection) {
-        currentSection.push(line || '');
-      }
-    }
-
-    // Add final section if exists
-    if (currentSection.length > 0) {
-      sections.push(currentSection.join('\n'));
-    }
-
-    return sections;
-  }
-
-  private isUsageHeader(line: string): boolean {
-    return ReadmeParser.USAGE_SECTION_PATTERNS.some(pattern => {
-      pattern.lastIndex = 0; // Reset regex state
-      return pattern.test(line);
-    });
-  }
 
   private extractCodeBlocksFromSection(section: string): UsageExample[] {
     const examples: UsageExample[] = [];
@@ -104,15 +47,14 @@ export class ReadmeParser {
         continue;
       }
 
-      // Determine the type of example based on language and content
-      const title = this.generateExampleTitle(cleanCode, language);
+      const title = this.codeAnalyzer.generateExampleTitle(cleanCode, language);
       const description = this.extractExampleDescription(section, match.index);
 
       examples.push({
         title,
         description: description || undefined,
         code: cleanCode,
-        language: this.normalizeLanguage(language),
+        language: this.codeAnalyzer.normalizeLanguage(language),
       });
     }
 

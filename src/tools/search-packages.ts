@@ -2,6 +2,7 @@ import { logger } from '../utils/logger.js';
 import { validateSearchQuery, validateLimit } from '../utils/validators.js';
 import { cache, createCacheKey } from '../services/cache.js';
 import { cratesIoApi } from '../services/crates-io-api.js';
+import { ScoreCalculator } from '../utils/score-calculator.js';
 import type {
   SearchPackagesParams,
   SearchPackagesResponse,
@@ -45,11 +46,10 @@ export async function searchPackages(params: SearchPackagesParams): Promise<Sear
     // Transform search results to our format
     const packages: PackageSearchResult[] = searchResponse.crates
       .map(crate => {
-        // Calculate quality and popularity scores (simplified)
-        const qualityScore = Math.min(1, (crate.recent_downloads || 0) / 10000); // Normalize to 0-1
-        const popularityScore = Math.min(1, (crate.downloads || 0) / 100000); // Normalize to 0-1
-        const maintenanceScore = 0.8; // Default maintenance score
-        const finalScore = (qualityScore + popularityScore + maintenanceScore) / 3;
+        const score = ScoreCalculator.calculateScore(
+          crate.recent_downloads || 0,
+          crate.downloads || 0
+        );
         
         return {
           name: crate.name,
@@ -59,27 +59,11 @@ export async function searchPackages(params: SearchPackagesParams): Promise<Sear
           author: 'Unknown', // Authors not available in search results
           publisher: 'crates.io',
           maintainers: [], // Not available in search results
-          score: {
-            final: finalScore,
-            detail: {
-              quality: qualityScore,
-              popularity: popularityScore,
-              maintenance: maintenanceScore,
-            },
-          },
-          searchScore: crate.exact_match ? 1.0 : 0.8,
+          score,
+          searchScore: ScoreCalculator.calculateSearchScore(crate.exact_match || false),
         };
       })
-      .filter(pkg => {
-        // Filter by quality and popularity if specified
-        if (quality !== undefined && pkg.score.detail.quality < quality) {
-          return false;
-        }
-        if (popularity !== undefined && pkg.score.detail.popularity < popularity) {
-          return false;
-        }
-        return true;
-      });
+      .filter(pkg => ScoreCalculator.matchesFilters(pkg.score.detail, quality, popularity));
 
     const response: SearchPackagesResponse = {
       query,

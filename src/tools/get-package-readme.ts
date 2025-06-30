@@ -2,9 +2,7 @@ import { logger } from '../utils/logger.js';
 import { validatePackageName, validateVersion } from '../utils/validators.js';
 import { cache, createCacheKey } from '../services/cache.js';
 import { cratesIoApi } from '../services/crates-io-api.js';
-import { githubApi } from '../services/github-api.js';
-import { readmeParser } from '../services/readme-parser.js';
-import { searchPackages } from './search-packages.js';
+import { readmeFetcher } from '../services/readme-fetcher.js';
 import type {
   GetPackageReadmeParams,
   PackageReadmeResponse,
@@ -68,32 +66,9 @@ export async function getPackageReadme(params: GetPackageReadmeParams): Promise<
     // Get actual version string (in case we requested 'latest')
     const actualVersion = versionInfo.num;
 
-    // Try to get README content
-    let readmeContent = '';
-    let readmeSource = 'none';
-
-    // First, try to get README from crates.io
-    const cratesIoReadme = await cratesIoApi.getReadmeContent(package_name, version);
-    if (cratesIoReadme) {
-      readmeContent = cratesIoReadme;
-      readmeSource = 'crates.io';
-      logger.debug(`Got README from crates.io: ${package_name}`);
-    }
-    // If no README from crates.io, try GitHub as fallback
-    else if (crateInfo.crate.repository) {
-      const githubReadme = await githubApi.getReadmeFromRepository(crateInfo.crate.repository);
-      if (githubReadme) {
-        readmeContent = githubReadme;
-        readmeSource = 'github';
-        logger.debug(`Got README from GitHub: ${package_name}`);
-      }
-    }
-
-    // Clean and process README content
-    const cleanedReadme = readmeParser.cleanMarkdown(readmeContent);
-    
-    // Extract usage examples
-    const usageExamples = readmeParser.parseUsageExamples(readmeContent, include_examples);
+    // Fetch and process README content
+    const readmeResult = await readmeFetcher.fetchReadme(package_name, version, crateInfo.crate.repository || undefined);
+    const { cleanedReadme, usageExamples } = readmeFetcher.cleanAndParseReadme(readmeResult.content, include_examples);
 
     // Create installation info
     const installation: InstallationInfo = {
@@ -141,7 +116,7 @@ export async function getPackageReadme(params: GetPackageReadmeParams): Promise<
     // Cache the response
     cache.set(cacheKey, response);
 
-    logger.info(`Successfully fetched crate README: ${package_name}@${actualVersion} (README source: ${readmeSource})`);
+    logger.info(`Successfully fetched crate README: ${package_name}@${actualVersion} (README source: ${readmeResult.source})`);
     return response;
 
   } catch (error) {
